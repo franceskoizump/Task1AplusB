@@ -46,14 +46,40 @@ int main()
     OCL_SAFE_CALL(clGetPlatformIDs(0, nullptr, &platformsCount));
     std::vector<cl_platform_id> platforms(platformsCount);
     OCL_SAFE_CALL(clGetPlatformIDs(platformsCount, platforms.data(), nullptr));
-    cl_platform_id platform = platforms[0];
-    cl_uint devicesCount = 0;
-    OCL_SAFE_CALL(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 0, nullptr, &devicesCount));
-    std::vector<cl_device_id> devices(devicesCount, 0);
-    OCL_SAFE_CALL(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, devicesCount, devices.data(), NULL));
-    cl_device_id device = devices[0]; 
+    cl_platform_id platform;
+    cl_device_id device; 
+    bool found = false;
+    for (int i = 0; i < platformsCount; i++)
+    {
+        cl_uint devicesCount = 0;
+        OCL_SAFE_CALL(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, nullptr, &devicesCount));
+        std::vector<cl_device_id> devices(devicesCount, 0);
+        OCL_SAFE_CALL(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, devicesCount, devices.data(), NULL));
+        if (devicesCount == 0)
+        {
+            continue;
+        }
+        found = true;
+        device = devices[0];   
+        break;     
+    }
+    if (!found)
+        for (int i = 0; i < platformsCount; i++)
+        {
+            cl_uint devicesCount = 0;
+            OCL_SAFE_CALL(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_CPU, 0, nullptr, &devicesCount));
+            std::vector<cl_device_id> devices(devicesCount, 0);
+            OCL_SAFE_CALL(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_CPU, devicesCount, devices.data(), NULL));
+            if (devicesCount == 0)
+            {
+                continue;
+            }
+            found = true;
+            device = devices[0];   
+            break;     
+        }
 
-    // TODO 2 Создайте контекст с выбранным устройством
+    // TODO 2 Создайте контекст с выбранным устройством 
     // См. документацию https://www.khronos.org/registry/OpenCL/sdk/1.2/docs/man/xhtml/ -> OpenCL Runtime -> Contexts -> clCreateContext
     // Не забывайте проверять все возвращаемые коды на успешность (обратите внимание что в данном случае метод возвращает
     // код по переданному аргументом errcode_ret указателю)
@@ -91,7 +117,7 @@ int main()
     OCL_SAFE_CALL(err);
     cl_mem bs_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*n, bs.data(), &err);
     OCL_SAFE_CALL(err);
-    cl_mem cs_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*n, cs.data(), &err);
+    cl_mem cs_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY |  CL_MEM_COPY_HOST_PTR, sizeof(float)*n, cs.data(), &err);
     OCL_SAFE_CALL(err);
 
 
@@ -137,10 +163,10 @@ int main()
     // TODO 10 Выставите все аргументы в кернеле через clSetKernelArg (as_gpu, bs_gpu, cs_gpu и число значений, убедитесь что тип количества элементов такой же в кернеле)
     {
          unsigned int i = 0;
-         clSetKernelArg(kernel, 0, sizeof(cl_mem),&as_buffer);
-         clSetKernelArg(kernel, 1, sizeof(cl_mem),&bs_buffer);
-         clSetKernelArg(kernel, 2, sizeof(cl_mem),&cs_buffer);
-         clSetKernelArg(kernel, 3, sizeof(size_t), &n);
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem),&as_buffer));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem),&bs_buffer));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(cl_mem),&cs_buffer));
+        OCL_SAFE_CALL(clSetKernelArg(kernel, i++, sizeof(size_t), &n));
     }
 
     // TODO 11 Выше увеличьте n с 1000*1000 до 100*1000*1000 (чтобы дальнейшие замеры были ближе к реальности)
@@ -201,12 +227,12 @@ int main()
             throw std::runtime_error("CPU and GPU results differ!");
         }
     }
-    clReleaseContext(context);
-    clReleaseCommandQueue(queue);
-    clReleaseKernel(kernel);
-    clReleaseProgram(program);
-    clReleaseMemObject(as_buffer);
-    clReleaseMemObject(bs_buffer);
-    clReleaseMemObject(cs_buffer);
+    OCL_SAFE_CALL(clReleaseContext(context));
+    OCL_SAFE_CALL(clReleaseCommandQueue(queue));
+    OCL_SAFE_CALL(clReleaseKernel(kernel));
+    OCL_SAFE_CALL(clReleaseProgram(program));
+    OCL_SAFE_CALL(clReleaseMemObject(as_buffer));   
+    OCL_SAFE_CALL(clReleaseMemObject(bs_buffer));
+    OCL_SAFE_CALL(clReleaseMemObject(cs_buffer));
     return 0;
 }
