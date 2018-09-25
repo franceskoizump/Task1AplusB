@@ -49,10 +49,12 @@ int main()
     cl_platform_id platform;
     cl_device_id device; 
     bool found = false;
+    int status;
     for (int i = 0; i < platformsCount; i++)
     {
         cl_uint devicesCount = 0;
-        OCL_SAFE_CALL(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, nullptr, &devicesCount));
+        status = clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, 0, nullptr, &devicesCount);
+        if (status == CL_DEVICE_NOT_FOUND) break;
         std::vector<cl_device_id> devices(devicesCount, 0);
         OCL_SAFE_CALL(clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_GPU, devicesCount, devices.data(), NULL));
         if (devicesCount == 0)
