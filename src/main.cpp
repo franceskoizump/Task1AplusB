@@ -119,7 +119,7 @@ int main()
     OCL_SAFE_CALL(err);
     cl_mem bs_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*n, bs.data(), &err);
     OCL_SAFE_CALL(err);
-    cl_mem cs_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY |  CL_MEM_COPY_HOST_PTR, sizeof(float)*n, cs.data(), &err);
+    cl_mem cs_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float)*n, NULL, &err);
     OCL_SAFE_CALL(err);
 
 
